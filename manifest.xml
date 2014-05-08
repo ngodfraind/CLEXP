@@ -1,0 +1,19 @@
+<module>
+  <label>CLEXP</label>
+  <name>ClaCoExport</name>
+  <version>0.1</version>
+  <license>GPL</license>
+  <type>admin</type>
+  <entry>index.php</entry>
+  <author>
+     <name>Nicolas Godfraind</name>
+     <email>nicolas.godfraind@gmail.com</email>
+     <web>http://www.claroline.net</web>
+  </author>
+
+  <requirements>
+    <claroline>
+      <version>1.9</version>
+    </claroline>
+ </requirements>
+</module>
