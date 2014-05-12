@@ -2,24 +2,41 @@
     
 require_once __DIR__ . '/../../claroline/inc/claro_init_global.inc.php';
 require_once __DIR__ . '/../../claroline/inc/lib/user.lib.php';
+require_once __DIR__ . '/../../claroline/inc/lib/course_utils.lib.php';
 require_once __DIR__ . '/exporter.lib.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Symfony\Component\Yaml\Yaml;
 
+$exportUser = true;
+$exportGroups = true;
 $course = 'GE01';
+$coursedata = claro_get_course_data($course);
+$courseName = $coursedata['name'];
 
 //temporary file directory wich is going to be zipped
 @mkdir(__DIR__ . "/{$course}");
 
 $data = array();
-$data['properties'] = export_properties($course);
-$data['members']['users'] = export_users($course);
-$data['roles'] = export_roles($course);
-$data['tools'] = export_tools($course);
+$data['properties'] = array(
+    'name' => $courseName,
+    'code' => $course,
+    'visible' => true,
+    'self_registration' => true,
+    'self_unregistration' => true,
+    'owner' => null
+);
+
+if ($exportUser) {
+    $data['members']['users'] = export_users($course, $exportGroups);
+}
+
+$data['roles'] = export_roles($course, $exportGroups);
+$data['tools'] = export_tools($course, $exportUser, $exportGroups);
 
 //add UTF-8 encoding
 file_put_contents(__DIR__ . "/{$course}/manifest.yml", utf8_encode(Yaml::dump($data, 10)));
+
 $zipArchive = new \ZipArchive();
 unlink(__DIR__ . "/{$course}.zip");
 $zipArchive->open(__DIR__ . "/{$course}.zip", \ZipArchive::CREATE);
@@ -46,19 +63,7 @@ foreach ($iterator as $fileinfo) {
 
 rmdir($dir);
 
-function export_properties($course)
-{
-    return array(
-        'name' => 'nom',
-        'code' => $course,
-        'visible' => true,
-        'self_registration' => true,
-        'self_unregistration' => true,
-        'owner' => null
-    );
-}
-
-function export_users($course)
+function export_users($course, $exportGroups)
 {
     $users = claro_export_user_list($course);
     $export = [];
@@ -91,8 +96,11 @@ function export_users($course)
             $roles[] = array('name' => 'ROLE_WS_CREATOR');
         }
         
-        $el['user']['roles'] = $roles;
+        if ($exportGroups) {
+            //do something
+        }
         
+        $el['user']['roles'] = $roles;
         $export[] = $el;
     }
     
@@ -100,7 +108,7 @@ function export_users($course)
     return $export;
 }
 
-function export_roles($course)
+function export_roles($course, $exportGroups)
 {
     $roles = array(
         array(
@@ -112,13 +120,26 @@ function export_roles($course)
         )
     );
     
+    if ($exportGroups) {
+        $groups = claro_export_groups($course);
+    
+        foreach ($groups as $group) {
+            $roles[] = array(
+                'role' => array(
+                    'name' => 'ROLE_WS_' . $group['secretDirectory'],
+                    'translation' => $group['name'],
+                    'is_base_role' => false
+                )
+            );
+        }
+    }
+    
     return $roles;
 }
 
-function export_tools($course)
+function export_tools($course, $exportUser, $exportGroups)
 {
-    $resmData = export_resource_manager($course);
-    
+    $resmData = export_resource_manager($course, $exportUser, $exportGroups);
     $tools = array();
     
     $home = array(
@@ -145,14 +166,49 @@ function export_tools($course)
     return $tools;
 }
 
-function export_resource_manager($course)
+function export_resource_manager($course, $exportUser, $exportGroups)
 {
     $rootDir = __DIR__ . "/../../courses/{$course}/document";
     $uid = 1;
     $directories = array();
     $items = array();
-    export_directory($rootDir, $directories, $items, $uid, 0, $course);
-    $items = export_forums($course, $items);
+    $roles = array(get_resource_base_role());
+    export_directory($rootDir, $directories, $items, $uid, $course, $roles);
+    $items = export_forums($course, $items, $exportUser);
+    
+    if ($exportGroups) {
+        $groups = claro_export_groups($course);
+        
+        foreach ($groups as $group) {
+            $roles = array(
+                array(
+                    'role' => array(
+                        'name' => 'ROLE_WS_' . $group['secretDirectory'],
+                        'rights' => array(
+                            'open' => true,
+                            'export' => true
+                        )
+                    )
+                )
+            );
+            
+            $directories[] = array(
+                'directory' => array(
+                    'name' => utf8_encode($group['name']),
+                    'creator' => null,
+                    'parent' => 0,
+                    'uid' => $uid,
+                    'roles' => $roles
+                )
+            );
+            
+            $uid++;
+            
+            $rootDir = __DIR__ . "/../../courses/{$course}/group/{$group['secretDirectory']}";
+            
+            export_directory($rootDir, $directories, $items, $uid, $course, $roles);
+        }
+    }
     
     $data = array(
         'root' => array('uid' => 0, 'roles' => array(get_resource_base_role())),
@@ -168,8 +224,8 @@ function export_directory(
     &$directories, 
     &$items, 
     &$uid, 
-    $parent, 
-    $course
+    $course,
+    $roles
 )
 {
     $iterator = new \DirectoryIterator($dir);
@@ -192,7 +248,7 @@ function export_directory(
                     'creator' => null,
                     'parent' => $parent,
                     'type' => 'file',
-                    'roles' => array(get_resource_base_role()),
+                    'roles' => $roles,
                     'data' => array(
                         array(
                             'file' => array(
@@ -212,7 +268,7 @@ function export_directory(
                     'creator' => null,
                     'parent' => $parent,
                     'uid' => $uid,
-                    'roles' => array(get_resource_base_role())
+                    'roles' => $roles
                 )
             );
                 
@@ -223,8 +279,8 @@ function export_directory(
                 $directories, 
                 $items, 
                 $uid, 
-                $parent,
-                $course
+                $course,
+                $roles
             );
         }
     }
@@ -232,7 +288,7 @@ function export_directory(
     return $directories;
 }
 
-function export_forums($course, $items)
+function export_forums($course, $items, $exportUser)
 {
     $categories = claro_export_category_list($course);
     @mkdir(__DIR__ . "/{$course}/forum");
@@ -267,11 +323,18 @@ function export_forums($course, $items)
                         utf8_encode($post['post_text'])
                     );
 
-                    $creator = user_get_properties($post['poster_id']);
+
+                    if ($exportUser) {
+                        $creator = user_get_properties($post['poster_id']);
+                        $creatorUsername = $creator['username'];
+                    } else {
+                        $creatorUsername = null;
+                    }
+                    
                     $messages[] = array(
                         'message' => array(
                             'path' => "forum/{$topic['topic_id']}/{$uniqid}",
-                            'creator' => $creator['username'],
+                            'creator' => $creatorUsername,
                             'creation_date' => $post['post_time']
                         )
                     );

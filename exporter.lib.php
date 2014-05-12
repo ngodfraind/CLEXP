@@ -60,7 +60,7 @@ function claro_export_topic_list($course, $forumId)
 function claro_export_forum_post($course, $topicId)
 {
     $tbl = get_module_course_tbl(array('bb_posts', 'bb_posts_text'), $course);
-    $tblPosts = $tbl['bb_posts'];
+    $tblPosts     = $tbl['bb_posts'];
     $tblPostsText = $tbl['bb_posts_text'];
     
     $sql = "SELECT `post`.`poster_id`,
@@ -73,5 +73,15 @@ function claro_export_forum_post($course, $topicId)
         WHERE `post_text`.`post_id` = `post`.`post_id`
         AND `post`.`topic_id` = {$topicId}";
         
+    return claro_sql_query_fetch_all_rows($sql);
+}
+
+function claro_export_groups($course)
+{
+    $tbl = get_module_course_tbl(array('group_team'), $course);
+    $tblGroups = $tbl['group_team'];
+    
+    $sql = "SELECT * FROM `" . $tblGroups . "`  ";
+    
     return claro_sql_query_fetch_all_rows($sql);
 }
