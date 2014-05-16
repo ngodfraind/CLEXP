@@ -92,6 +92,24 @@ function claro_export_groups($course)
     return claro_sql_query_fetch_all_rows($sql);
 }
 
+function claro_export_link_list($course, $locator)
+{
+    $tbl = get_module_course_tbl(array('lnk_links', 'lnk_resources'), $course);
+    $tblLinks     = $tbl['lnk_links'];
+    $tblResources = $tbl['lnk_resources'];
+
+    $sql = "SELECT `dest`.`crl` AS `crl`, `dest`.`title` AS `title`\n"
+        . "FROM `{$tblLinks}` AS `lnk`,\n"
+        . "`{$tblResources}` AS `dest`,\n"
+        . "`{$tblResources}` AS `src`\n"
+        . "WHERE `src`.`crl` = " . Claroline::getDatabase()->quote( $locator->__toString() ) . "\n"
+        . "AND `dest`.`id` = `lnk`.`dest_id`\n"
+        . "AND `src`.`id` = `lnk`.`src_id`\n"
+    ;
+
+    return claro_sql_query_fetch_all_rows($sql);
+}
+
  /********
   * YAML *
   *******/
@@ -204,10 +222,12 @@ function export_home($course)
     foreach ($toolsIntroductions as $toolsIntroduction)
     {
         $uniqid = uniqid() . '.txt';
+        $content = $toolsIntroduction->getContent();
+        $locator = new ClarolineResourceLocator($course, 'CLTI', $toolsIntroduction->getId());
 
         file_put_contents(
             __DIR__ . "/{$course}/home/editorial/{$uniqid}",
-            utf8_encode($toolsIntroduction->getContent())
+            utf8_encode($content)
         );
 
         $editorialTab['widgets'][$toolsIntroduction->getRank()] = array(
