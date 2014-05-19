@@ -181,7 +181,7 @@ function export_roles($course, $exportGroups)
 function export_tools($course, $exportUser, $exportGroups)
 {
     $resmData = export_resource_manager($course, $exportUser, $exportGroups);
-    $home = export_home($course);
+    $home = export_home($course, $resmData);
     $tools = array();
     
     $home = array(
@@ -208,7 +208,7 @@ function export_tools($course, $exportUser, $exportGroups)
     return $tools;
 }
 
-function export_home($course)
+function export_home($course, $resmData)
 {
     $toolsIntroductions = new ToolIntroductionIterator($course);
 
@@ -223,7 +223,19 @@ function export_home($course)
     {
         $uniqid = uniqid() . '.txt';
         $content = $toolsIntroduction->getContent();
-        $locator = new ClarolineResourceLocator($course, 'CLTI', $toolsIntroduction->getId());
+        $locator = new ClarolineResourceLocator($course, 'CLINTRO', $toolsIntroduction->getId());
+        $links = claro_export_link_list($course, $locator);
+
+        foreach ($links as $link) {
+            $el = ClarolineResourceLocator::parse($link['crl']);
+
+            //pour le moment, je ne supporte que les pièces jointes de type "document".
+            //Je laisse tomber les vrais liens pour le moment
+            if ($el->getModuleLabel() === 'CLDOC') {
+                $ids = findUidByPath($el->getResourceId(), $resmData);
+                $content .= '</br>[[resource:' . $ids[0] . ':' . $ids[1] . ']]';
+            }
+        }
 
         file_put_contents(
             __DIR__ . "/{$course}/home/editorial/{$uniqid}",
@@ -243,7 +255,7 @@ function export_home($course)
             )
         );
     }
-    
+
     $data = array(array('tab' => $editorialTab));
 
     return $data;
@@ -544,3 +556,56 @@ function export($exportUser, $exportGroups, $course) {
 
     rmdir($dir);
 }
+
+/********/
+/* MISC */
+/********/
+
+function findUidByPath($path, $data)
+{
+    $elements = explode('/', $path);
+    $last = array_pop($elements);
+    $uids = [];
+    $i = 0;
+
+    //get the uid tree path
+    foreach ($elements as $element) {
+        $parentUid = ($i === 0) ? 0: $uids[$i - 1]['uid'];
+        $uids[] = findDir($parentUid, $element, $data);
+        $i++;
+    }
+
+    $lastParent = count($uids) > 0 ? array_pop($uids)['uid']: 0;
+
+    //find the last leaf
+    foreach($data['directories'] as $directory) {
+        $dir = $directory['directory'];
+
+        if ($dir['name'] === $last && $dir['parent'] === $lastParent) {
+            return array('directory', $dir['uid']);
+        }
+    }
+
+    foreach($data['items'] as $item) {
+        $el = $item['item'];
+
+        if ($el['name'] === $last && $el['parent'] === $lastParent) {
+            return array('item', $el['uid']);
+        }
+    }
+
+    throw new \Exception('Resource ' . $path . ' not found in the configuration file.');
+}
+
+function findDir($parentUid, $name, $data)
+{
+    foreach ($data['directories'] as $directory) {
+        $dir = $directory['directory'];
+        if ($dir['parent'] === $parentUid && $dir['name'] === $name) {
+            return $dir;
+        }
+    }
+
+    return null;
+}
+

@@ -1,9 +1,11 @@
 <module>
-  <label>CLEXP</label>
+  <label>CLEXPO</label>
   <name>ClaCoExport</name>
   <version>0.1</version>
   <license>GPL</license>
-  <type>admin</type>
+  <type>tool</type>
+  <context>course</context>
+  <context>group</context>
   <entry>index.php</entry>
   <author>
      <name>Nicolas Godfraind</name>
