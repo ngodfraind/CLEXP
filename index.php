@@ -10,6 +10,8 @@ require_once __DIR__ . '/../../claroline/inc/lib/course_utils.lib.php';
 require_once __DIR__ . '/../../claroline/inc/lib/core/linker.lib.php';
 require_once __DIR__ . '/../../claroline/tool_intro/lib/toolintroductioniterator.class.php';
 require_once __DIR__ . '/../../claroline/course_description/lib/courseDescription.lib.php';
+require_once __DIR__ . '/../../claroline/wiki/lib/class.wiki2xhtmlexport.php';
+require_once __DIR__ . '/../../claroline/wiki/lib/class.wiki.php';
 require_once __DIR__ . '/exporter.lib.php';
 require_once __DIR__ . '/vendor/autoload.php';
 

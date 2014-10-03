@@ -108,7 +108,7 @@ function export_home($course, $resmData)
         );
     }
 
-    $courseDescriptionTab = array('name' => 'Description');
+    $courseDescriptionTab = array('name' => 'Description', 'widgets' => array());
     //course descriptions
     $courseDescriptions = claro_export_course_descriptions($course); 
     
@@ -151,6 +151,8 @@ function export_resource_manager($course)
     $roles = array(get_resource_base_role());
     export_directory($rootDir, $directories, $items, $uid, $iid, $course, $roles);
     $items = export_forums($course, $items, $iid);
+    $items = export_wikis($course, $items, $iid);
+    $items = export_work_assignements($course, $items, $iid);
     $groups = claro_export_groups($course);
     
     foreach ($groups as $group) {
@@ -265,6 +267,55 @@ function export_directory(
     return $directories;
 }
 
+function export_wikis($course, $items, &$iid)
+{
+    $roles = array(get_resource_base_role());
+    @mkdir(__DIR__ . "/{$course}/wiki");
+    $con = Claroline::getDatabase();
+    $config = array ();
+    $tblList = claro_sql_get_course_tbl();
+    $config["tbl_wiki_properties"] = $tblList["wiki_properties"];
+    $config["tbl_wiki_pages"] = $tblList["wiki_pages"];
+    $config["tbl_wiki_pages_content"] = $tblList["wiki_pages_content"];
+    $config["tbl_wiki_acls"] = $tblList["wiki_acls"];
+    $wikis  = claro_export_wiki_properties($course);
+    
+    foreach ($wikis as $data) {
+        $wiki = new Wiki($con, $config);
+        $wiki->load($data['id']);
+        $exporter = new WikiToSingleHTMLExporter($wiki);
+        $res = $exporter->export();
+        $uniqid = 'wiki/' . uniqid() . '.txt';
+        file_put_contents(
+            __DIR__ . "/{$course}/{$uniqid}", 
+            utf8_encode($res)
+        );
+                    
+        //create "text" resource
+        $item = array(
+            'name' => $data['title'],
+            'creator' => null,
+            'parent' => 0,
+            'type' => 'text',
+            'is_rich' => true,
+            'roles' => $roles,
+            'uid' => $iid,
+            'data' => array(
+                array(
+                    'file' => array(
+                        'path' => $uniqid
+                    )
+                )
+            )
+        );
+        
+        $items[] = array('item' => $item);
+        $iid++;
+    }
+    
+    return $items;
+}
+
 function export_forums($course, $items, &$iid)
 {
     $categories = claro_export_category_list($course);
@@ -309,6 +360,7 @@ function export_forums($course, $items, &$iid)
                         'message' => array(
                             'path' => "forum/{$topic['topic_id']}/{$uniqid}",
                             'creator' => $creatorUsername,
+                            'author' => $creatorUsername,
                             'creation_date' => $post['post_time']
                         )
                     );
@@ -338,6 +390,43 @@ function export_forums($course, $items, &$iid)
             utf8_encode(Yaml::dump($data, 10))
         );
 
+        $iid++;
+    }
+    
+    return $items;
+}
+
+function export_work_assignements($course, $items, &$iid)
+{
+    $wrkAssignments = claro_export_work_assignments($course);
+    @mkdir(__DIR__ . "/{$course}/work_assignments");
+    $roles = array(get_resource_base_role());
+    
+    foreach ($wrkAssignments as $wrkAssignment) {
+        $uniqid = 'work_assignments/' . uniqid() . '.txt';
+        file_put_contents(
+            __DIR__ . "/{$course}/{$uniqid}", 
+            utf8_encode($wrkAssignment['description'])
+        );
+        $item = array(
+                'item' => array(
+                'name' => $wrkAssignment['title'],
+                'creator' => null,
+                'parent' => 0,
+                'uid' => $iid,
+                'type' => 'text',
+                'roles' => $roles,
+                'is_rich' => true,
+                'data' => array(
+                    array(
+                        'file' => array(
+                            'path' => $uniqid
+                        )
+                    )
+                )
+            )
+        );
+        $items[] = $item;
         $iid++;
     }
     

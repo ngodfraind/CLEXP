@@ -2,7 +2,7 @@
 
 function claro_export_user_list($courseCode)
 {    
-    $tbl_mdb_names = claro_sql_get_main_tbl();
+    $tbl_mdb_names       = claro_sql_get_main_tbl();
     $tbl_rel_course_user = $tbl_mdb_names['rel_course_user'  ];
     $tbl_users           = $tbl_mdb_names['user'             ];
     
@@ -35,9 +35,7 @@ function claro_export_course_descriptions($course)
         `descr`.`title`   AS `title`,
         `descr`.`content` AS `content`
         FROM `" . $tblDescr . "` AS descr";
-        
-        var_dump($sqlGetDescriptions);
-        
+
     return claro_sql_query_fetch_all_rows($sqlGetDescriptions);
 }
 
@@ -62,6 +60,14 @@ function claro_export_forum_list($course, $categoryId)
     $sql = "SELECT * FROM `{$tbl['bb_forums']}`
         WHERE `bb_forums`.`cat_id` = {$categoryId}  
         ORDER BY forum_order";
+    
+    return claro_sql_query_fetch_all_rows($sql);
+}
+
+function claro_export_work_assignments($course)
+{
+    $tbl = get_module_course_tbl(array('wrk_assignment'), $course);
+    $sql = "SELECT * FROM `{$tbl['wrk_assignment']}`";
     
     return claro_sql_query_fetch_all_rows($sql);
 }
@@ -130,5 +136,14 @@ function claro_export_link_list($course, $locator)
         . "AND `src`.`id` = `lnk`.`src_id`\n"
     ;
 
+    return claro_sql_query_fetch_all_rows($sql);
+}
+
+function claro_export_wiki_properties($course)
+{
+    $tbl = get_module_course_tbl(array('wiki_properties'), $course);
+    $tblWiki = $tbl['wiki_properties'];
+    $sql = "SELECT * FROM `{$tblWiki}`";
+    
     return claro_sql_query_fetch_all_rows($sql);
 }
