@@ -153,6 +153,7 @@ function export_resource_manager($course)
     $items = export_forums($course, $items, $iid);
     $items = export_wikis($course, $items, $iid);
     $items = export_work_assignements($course, $items, $iid);
+    $items = export_scorm_packages($course, $items, $iid);
     $groups = claro_export_groups($course);
     
     foreach ($groups as $group) {
@@ -433,6 +434,44 @@ function export_work_assignements($course, $items, &$iid)
     return $items;
 }
 
+function export_scorm_packages($course, $items, &$iid) 
+{
+    $rootDir = __DIR__ . "/../../courses/{$course}/scormPackages";
+    $iterator = new \DirectoryIterator($rootDir);
+    $roles = array(get_resource_base_role());
+    $scormDir = __DIR__ . "/{$course}/scorm";
+    @mkdir($scormDir);
+    
+    foreach ($iterator as $item) {
+        if ($item->isDir() && !$item->isDot()) {
+            $archive = zipDir($item->getPathName(), $removeOldFiles = false);
+            rename($archive, $scormDir . '/' . $item->getBaseName() . '.zip');
+            
+            $items[] = array(
+                'item' => array(
+                'name' => utf8_encode($item->getBaseName()),
+                'creator' => null,
+                'parent' => 0,
+                'type' => 'file',
+                'roles' => $roles,
+                'uid' => $iid,
+                'data' => array(
+                    array(
+                        'file' => array(
+                            'path' => $item->getBaseName() . 'zip',
+                            'mime_type' => 'scorm-2012'
+                            )
+                        )
+                    )
+                )
+            );
+            $iid++;
+        }
+    }
+    
+    return $items;
+}
+
 function get_resource_base_role()
 {
     return array(
@@ -489,37 +528,45 @@ function export($course) {
 
     //add UTF-8 encoding
     file_put_contents(__DIR__ . "/{$course}/manifest.yml", utf8_encode(Yaml::dump($data, 10)));
-
-    $zipArchive = new \ZipArchive();
     unlink(__DIR__ . "/{$course}.zip");
-    $zipArchive->open(__DIR__ . "/{$course}.zip", \ZipArchive::CREATE);
-
-    $dir = __DIR__ . "/{$course}";
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
-        RecursiveIteratorIterator::CHILD_FIRST
-    );
-
-    foreach ($iterator as $el) {
-        if ($el->isFile()) {
-            $zipArchive->addFile($el->getPathName(), relativePath($dir, $el->getPathName())); 
-        }
-    }
-
-    $zipArchive->close();
-
-    foreach ($iterator as $fileinfo) {
-        $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
-        $todo($fileinfo->getRealPath());
-    }
-
-    rmdir($dir);
+    $archive = zipDir(__DIR__ . "/{$course}", true);
+    rename($archive, __DIR__ . "/{$course}.zip");
 }
 
 /********/
 /* MISC */
 /********/
+
+function zipDir($directory, $removeOldFiles = false)
+{
+    $zipArchive = new \ZipArchive();
+    $archive = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid() . '.zip';
+    $zipArchive->open($archive, \ZipArchive::CREATE);
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+
+    foreach ($iterator as $el) {
+        if ($el->isFile()) {
+            $zipArchive->addFile($el->getPathName(), relativePath($directory, $el->getPathName())); 
+        }
+    } 
+    
+    $zipArchive->close();
+    
+    if ($removeOldFiles) {
+        foreach ($iterator as $fileinfo) {
+        $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+        $todo($fileinfo->getRealPath());
+    }
+
+        rmdir($directory);
+    }
+    
+    return $archive;
+}
 
 function findUidByPath($path, $data)
 {
