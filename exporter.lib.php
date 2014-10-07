@@ -452,14 +452,14 @@ function export_scorm_packages($course, $items, &$iid)
                 'name' => utf8_encode($item->getBaseName()),
                 'creator' => null,
                 'parent' => 0,
-                'type' => 'file',
+                'type' => 'claroline_scorm_12',
                 'roles' => $roles,
                 'uid' => $iid,
                 'data' => array(
                     array(
-                        'file' => array(
-                            'path' => $item->getBaseName() . 'zip',
-                            'mime_type' => 'scorm-2012'
+                        'scorm12' => array(
+                            'path' => "scorm/{$item->getBaseName()}.zip",
+                            'version' => 'scorm-2012'
                             )
                         )
                     )
