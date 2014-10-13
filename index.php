@@ -12,7 +12,7 @@ require_once __DIR__ . '/../../claroline/tool_intro/lib/toolintroductioniterator
 require_once __DIR__ . '/../../claroline/course_description/lib/courseDescription.lib.php';
 require_once __DIR__ . '/../../claroline/wiki/lib/class.wiki2xhtmlexport.php';
 require_once __DIR__ . '/../../claroline/wiki/lib/class.wiki.php';
-require_once __DIR__ . '/exporter.lib.php';
+require_once __DIR__ . '/exporter.class.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
 $exportUser = true;
@@ -29,4 +29,5 @@ $code = $claroline->display->header->course['sysCode'];
 
 //echo $claroline->display->render();
 
-export($code);
+$exporter = new Exporter($code);
+$exporter->export();
