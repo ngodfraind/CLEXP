@@ -18,16 +18,22 @@ require_once __DIR__ . '/vendor/autoload.php';
 $exportUser = true;
 $exportGroups = true;
 $course = 'TEST';
-
-
-$out = '';
 $nameTools = get_lang('Export');
-$out .= claro_html_tool_title($nameTools);
-$out .= '<form action="#"><input type="text"></input><input type="submit"></input></form>';
-$claroline->display->body->appendContent($out);
 $code = $claroline->display->header->course['sysCode'];
 
 //echo $claroline->display->render();
 
 $exporter = new Exporter($code);
-$exporter->export();
+$file = $exporter->export();
+
+//http://stackoverflow.com/questions/5595485/php-file-download
+if (file_exists($file))
+{
+        header('Content-Description: File Transfer');
+        header("Content-Type: 'application/force-download'");
+        header('Content-Disposition: attachment; filename='.basename($file));
+        header('Content-Transfer-Encoding: octet-stream'); 
+        header('Connection: close'); 
+        echo readfile($file);
+        unlink($file);
+}

@@ -97,11 +97,7 @@ class RichTextParser
             foreach($matches as $match) {
                 $matchReplaced = [];;
                 $fileUid = $this->findFileInData($match[2]);
-                preg_match(
-                    $regexp,
-                    $text,
-                    $matchReplaced
-                );
+                preg_match($regexp, $text, $matchReplaced);
                 
                 if (count($matchReplaced) > 0) {
                     $text = str_replace($matchReplaced[0], "[[uid={$fileUid}]]", $text);

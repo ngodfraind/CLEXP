@@ -54,9 +54,12 @@ class Exporter
 
         //add UTF-8 encoding
         file_put_contents(__DIR__ . "/{$course}/manifest.yml", utf8_encode(Yaml::dump($data, 10)));
-        unlink(__DIR__ . "/{$course}.zip");
+        $fileName = __DIR__ . "/{$course}.zip";
+        unlink($fileName);
         $archive = zipDir($courseTmpDir, true);
-        rename($archive, __DIR__ . "/{$course}.zip");
+        rename($archive, $fileName);
+        
+        return $fileName;
     }
     
     private function exportRoles()
@@ -463,17 +466,15 @@ class Exporter
             $content = $toolsIntroduction->getContent();
             $locator = new ClarolineResourceLocator($course, 'CLINTRO', $toolsIntroduction->getId());
             $links = claro_export_link_list($course, $locator);
-            /*
+            
             foreach ($links as $link) {
                 $el = ClarolineResourceLocator::parse($link['crl']);
 
-                //pour le moment, je ne supporte que les pièces jointes de type "document".
-                //Je laisse tomber les vrais liens pour le moment
                 if ($el->getModuleLabel() === 'CLDOC') {
                     $ids = findUidByPath($el->getResourceId(), $resmData);
-                    $content .= '</br>[[internal:resource_manager:data:directories:' . $ids[0] . ':uid:' . $ids[1] . ']]';
+                    $content .= '</br>[[uid=' . $ids[1] . ']]';
                 }
-            }*/
+            }
 
             file_put_contents(
                 __DIR__ . "/{$course}/home/editorial/{$uniqid}",
