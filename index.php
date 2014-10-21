@@ -27,13 +27,12 @@ $exporter = new Exporter($code);
 $file = $exporter->export();
 
 //http://stackoverflow.com/questions/5595485/php-file-download
-if (file_exists($file))
-{
+if (file_exists($file)) {
         header('Content-Description: File Transfer');
         header("Content-Type: 'application/force-download'");
         header('Content-Disposition: attachment; filename='.basename($file));
         header('Content-Transfer-Encoding: octet-stream'); 
         header('Connection: close'); 
         echo readfile($file);
-        unlink($file);
+        //unlink($file);
 }

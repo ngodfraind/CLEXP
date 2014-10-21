@@ -26,13 +26,14 @@ class Exporter
     
     public function export()
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $coursedata = claro_get_course_data($course);
         $courseName = $coursedata['name'];
         $cid = $coursedata['id'];
 
         //temporary file directory wich is going to be zipped
-        $courseTmpDir = __DIR__ . "/{$course}";
+        $courseTmpDir = __DIR__ . "{$ds}{$course}";
         @mkdir($courseTmpDir);
 
         $data = array();
@@ -53,8 +54,8 @@ class Exporter
         $richTextParser->parseAndReplace();
 
         //add UTF-8 encoding
-        file_put_contents(__DIR__ . "/{$course}/manifest.yml", utf8_encode(Yaml::dump($data, 10)));
-        $fileName = __DIR__ . "/{$course}.zip";
+        file_put_contents(__DIR__ . "{$ds}{$course}{$ds}manifest.yml", utf8_encode(Yaml::dump($data, 10)));
+        $fileName = __DIR__ . "{$ds}{$course}.zip";
         unlink($fileName);
         $archive = zipDir($courseTmpDir, true);
         rename($archive, $fileName);
@@ -122,8 +123,9 @@ class Exporter
     
     private function exportResourceManager()
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
-        $rootDir = __DIR__ . "/../../courses/{$course}/document";
+        $rootDir = __DIR__ . "{$ds}..{$ds}..{$ds}courses{$ds}{$course}{$ds}document";
         $uid = 1;
         $iid = 1;
         $directories = array();
@@ -160,7 +162,7 @@ class Exporter
             );
             
             $uid++;
-            $rootDir = __DIR__ . "/../../courses/{$course}/group/{$group['secretDirectory']}";
+            $rootDir = __DIR__ . "{$ds}..{$ds}..{$ds}courses{$ds}{$course}{$ds}group{$ds}{$group['secretDirectory']}";
             $this->exportDirectory($rootDir, $directories, $items, $uid, $iid, $roles);
         }
 
@@ -189,7 +191,7 @@ class Exporter
                 $fi = explode(';', $fileinfo);
                 $extension = pathinfo($item->getBaseName(), PATHINFO_EXTENSION);
                 $uniqid = uniqid() . '.' . $extension;
-                copy($item->getPathName(), __DIR__ .  "/{$course}/{$uniqid}");
+                copy($item->getPathName(), __DIR__ .  "{$ds}{$course}{$ds}{$uniqid}");
                 
                 $items[] = array(
                         'item' => array(
@@ -242,9 +244,10 @@ class Exporter
     
     private function exportWikis($items, &$iid)
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $roles = array($this->resourceBaseRoles);
-        @mkdir(__DIR__ . "/{$course}/wiki");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}wiki");
         $con = Claroline::getDatabase();
         $config = array ();
         $tblList = claro_sql_get_course_tbl();
@@ -259,9 +262,9 @@ class Exporter
             $wiki->load($data['id']);
             $exporter = new WikiToSingleHTMLExporter($wiki);
             $res = $exporter->export();
-            $uniqid = 'wiki/' . uniqid() . '.txt';
+            $uniqid = "wiki{$ds}" . uniqid() . '.txt';
             file_put_contents(
-                __DIR__ . "/{$course}/{$uniqid}", 
+                __DIR__ . "{$ds}{$course}{$ds}{$uniqid}", 
                 utf8_encode($res)
             );
                         
@@ -292,9 +295,10 @@ class Exporter
     
     private function exportForums($items, &$iid)
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $categories = claro_export_category_list($course);
-        @mkdir(__DIR__ . "/{$course}/forum");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}forum");
         $roles = array($this->resourceBaseRoles);
         
         //$item list 
@@ -321,12 +325,12 @@ class Exporter
                 foreach ($topics as $topic) {
                     $messages = array();
                     $posts = claro_export_forum_post($course, $topic['topic_id']);
-                    @mkdir(__DIR__ . "/{$course}/forum/{$topic['topic_id']}");
+                    @mkdir(__DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}");
                     
                     foreach ($posts as $post) {
                         $uniqid = uniqid() . '.txt';
                         file_put_contents(
-                            __DIR__ . "/{$course}/forum/{$topic['topic_id']}/{$uniqid}", 
+                            __DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}", 
                             utf8_encode($post['post_text'])
                         );
 
@@ -335,7 +339,7 @@ class Exporter
                         
                         $messages[] = array(
                             'message' => array(
-                                'path' => "forum/{$topic['topic_id']}/{$uniqid}",
+                                'path' => "forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}",
                                 'creator' => $creatorUsername,
                                 'author' => $creatorUsername,
                                 'creation_date' => $post['post_time']
@@ -363,7 +367,7 @@ class Exporter
             $data['data'] = $categories;
             
             file_put_contents(
-                __DIR__ . "/{$course}/forum_{$category['cat_id']}.yml", 
+                __DIR__ . "{$ds}{$course}{$ds}forum_{$category['cat_id']}.yml", 
                 utf8_encode(Yaml::dump($data, 10))
             );
 
@@ -375,15 +379,16 @@ class Exporter
     
     private function exportWorkAssignments($items, &$iid)
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $wrkAssignments = claro_export_work_assignments($course);
-        @mkdir(__DIR__ . "/{$course}/work_assignments");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}work_assignments");
         $roles = array($this->resourceBaseRoles);
         
         foreach ($wrkAssignments as $wrkAssignment) {
-            $uniqid = 'work_assignments/' . uniqid() . '.txt';
+            $uniqid = "work_assignments{$ds}" . uniqid() . '.txt';
             file_put_contents(
-                __DIR__ . "/{$course}/{$uniqid}", 
+                __DIR__ . "{$ds}{$course}{$ds}{$uniqid}", 
                 utf8_encode($wrkAssignment['description'])
             );
             $item = array(
@@ -413,17 +418,18 @@ class Exporter
     
     private function exportScormPackages($items, &$iid)
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
-        $rootDir = __DIR__ . "/../../courses/{$course}/scormPackages";
+        $rootDir = __DIR__ . "{$ds}..{$ds}..{$ds}courses{$ds}{$course}{$ds}scormPackages";
         $iterator = new \DirectoryIterator($rootDir);
         $roles = array($this->resourceBaseRoles);
-        $scormDir = __DIR__ . "/{$course}/scorm";
+        $scormDir = __DIR__ . "{$ds}{$course}{$ds}scorm";
         @mkdir($scormDir);
         
         foreach ($iterator as $item) {
             if ($item->isDir() && !$item->isDot()) {
                 $archive = zipDir($item->getPathName(), $removeOldFiles = false);
-                rename($archive, $scormDir . '/' . $item->getBaseName() . '.zip');
+                rename($archive, $scormDir . $ds . $item->getBaseName() . '.zip');
                 
                 $items[] = array(
                     'item' => array(
@@ -436,7 +442,7 @@ class Exporter
                     'data' => array(
                         array(
                             'scorm12' => array(
-                                'path' => "scorm/{$item->getBaseName()}.zip",
+                                'path' => "scorm{$ds}{$item->getBaseName()}.zip",
                                 'version' => 'scorm-2012'
                                 )
                             )
@@ -452,12 +458,13 @@ class Exporter
     
     private function exportHome($resmData)
     {
+        $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $toolsIntroductions = new ToolIntroductionIterator($course);
         $editorialTab = array( 'name' => 'Editorial');
-        @mkdir(__DIR__ . "/{$course}/home");
-        @mkdir(__DIR__ . "/{$course}/home/editorial");
-        @mkdir(__DIR__ . "/{$course}/home/course_description");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}home");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}home{$ds}editorial");
+        @mkdir(__DIR__ . "{$ds}{$course}{$ds}home{$ds}course_description");
 
         //tools introduction
         foreach ($toolsIntroductions as $toolsIntroduction)
@@ -477,7 +484,7 @@ class Exporter
             }
 
             file_put_contents(
-                __DIR__ . "/{$course}/home/editorial/{$uniqid}",
+                __DIR__ . "{$ds}{$course}{$ds}home{$ds}editorial{$ds}{$uniqid}",
                 utf8_encode($content)
             );
 
@@ -488,7 +495,7 @@ class Exporter
                     'data' => array(
                         array(
                             'locale' => 'fr',
-                            'content' => "home/editorial/{$uniqid}"
+                            'content' => "home{$ds}editorial{$ds}{$uniqid}"
                         )
                     )
                 )
@@ -504,7 +511,7 @@ class Exporter
             $uniqid = uniqid() . '.txt';
             $content = $courseDescription['content'];
             file_put_contents(
-                __DIR__ . "/{$course}/home/course_description/{$uniqid}",
+                __DIR__ . "{$ds}{$course}{$ds}home{$ds}course_description{$ds}{$uniqid}",
                 utf8_encode($content)
             );
             
@@ -515,7 +522,7 @@ class Exporter
                     'data' => array(
                         array(
                             'locale' => 'fr',
-                            'content' => "home/course_description/{$uniqid}"
+                            'content' => "home{$ds}course_description{$ds}{$uniqid}"
                         )
                     )
                 )
