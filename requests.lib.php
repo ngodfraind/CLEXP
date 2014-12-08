@@ -147,3 +147,15 @@ function claro_export_wiki_properties($course)
     
     return claro_sql_query_fetch_all_rows($sql);
 }
+
+function claro_export_exercises($course)
+{
+    $tbl = get_module_course_tbl(array('qwz_exercise'));
+    $tblExercise = $tbl['qwz_exercise'];
+    
+    $sql = "SELECT `id`, `title`
+      FROM `{$tblExercise}`
+      ORDER BY `id`";
+      
+    return claro_sql_query_fetch_all_rows($sql);
+}

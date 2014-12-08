@@ -23,18 +23,7 @@ function zipDir($directory, $removeOldFiles = false)
     $zipArchive = new \ZipArchive();
     $archive = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid() . '.zip';
     $zipArchive->open($archive, \ZipArchive::CREATE);
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
-        RecursiveIteratorIterator::CHILD_FIRST
-    );
-
-    foreach ($iterator as $el) {
-        if ($el->isFile()) {
-            $zipArchive->addFile($el->getPathName(), relativePath($directory, $el->getPathName())); 
-        }
-    } 
-    
+    addDirToZip($directory, $zipArchive);
     $zipArchive->close();
     
     if ($removeOldFiles) {
@@ -47,6 +36,23 @@ function zipDir($directory, $removeOldFiles = false)
     }
     
     return $archive;
+}
+
+function addDirToZip($directory, \ZipArchive $zipArchive, $includeRoot = false)
+{
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+
+    foreach ($iterator as $el) {
+        if ($el->isFile()) {
+            $path = $includeRoot ? 
+                pathinfo($directory, PATHINFO_FILENAME) . '/' . relativePath($directory, $el->getPathName()):
+                relativePath($directory, $el->getPathName());
+            $zipArchive->addFile($el->getPathName(), $path); 
+        }
+    } 
 }
 
 function findUidByPath($path, $data)

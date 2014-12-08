@@ -4,6 +4,7 @@ use Symfony\Component\Yaml\Yaml;
 
 require_once __DIR__ . '/richTextParser.class.php';
 require_once __DIR__ . '/utils.lib.php';
+require_once __DIR__ . '/exerciseExporter.class.php';
 
 class Exporter
 {
@@ -136,6 +137,7 @@ class Exporter
         $items = $this->exportWikis($items, $iid);
         $items = $this->exportWorkAssignments($items, $iid);
         $items = $this->exportScormPackages($items, $iid);
+        $items = $this->exportExercises($items, $iid);
         $groups = claro_export_groups($course);
         
         foreach ($groups as $group) {
@@ -451,6 +453,42 @@ class Exporter
                 );
                 $iid++;
             }
+        }
+        
+        return $items;
+    }
+
+    private function exportExercises($items, &$iid)
+    {
+        $ds = DIRECTORY_SEPARATOR;
+        $exercises = claro_export_exercises($this->course);
+        $exerciseExporter = new ExerciseExporter($this->course);
+        $qtiDir = __DIR__ . "{$ds}{$this->course}{$ds}qti";
+        $roles = array($this->resourceBaseRoles);
+        @mkdir($qti);
+
+        foreach ($exercises as $exercise) {
+            $qti = $exerciseExporter->exportQti($exercise);
+            rename($qti, $qtiDir . $ds . $exercise['title'] . '.zip');
+            $items[] = array(
+                'item' => array(
+                'name' => utf8_encode($exercise['title']),
+                'creator' => null,
+                'parent' => 0,
+                'type' => 'ujm_exercise',
+                'roles' => $roles,
+                'uid' => $iid,
+                'data' => array(
+                    array(
+                        'file' => array(
+                            'path' => "qti{$ds}{$exercise['title']}.zip",
+                            'version' => 'qti2'
+                            )
+                        )
+                    )
+                )
+            );
+            $iid++;
         }
         
         return $items;
