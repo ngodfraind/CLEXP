@@ -465,11 +465,20 @@ class Exporter
         $exerciseExporter = new ExerciseExporter($this->course);
         $qtiDir = __DIR__ . "{$ds}{$this->course}{$ds}qti";
         $roles = array($this->resourceBaseRoles);
-        @mkdir($qti);
+        @mkdir($qtiDir);
 
         foreach ($exercises as $exercise) {
-            $qti = $exerciseExporter->exportQti($exercise);
-            rename($qti, $qtiDir . $ds . $exercise['title'] . '.zip');
+            $filePathList = $exerciseExporter->exportQti($exercise);
+            $exDir = $qtiDir . '/' . utf8_encode($exercise['title']);
+            @mkdir($exDir);
+            
+            foreach ($filePathList as $path) {
+                $dest = $exDir . '/' . pathinfo($path, PATHINFO_BASENAME); 
+                @mkdir($dest);
+                copyDirectory($path, $dest);
+            }
+            
+            //rename($qti, $qtiDir . $ds . $exercise['title'] . '.zip');
             $items[] = array(
                 'item' => array(
                 'name' => utf8_encode($exercise['title']),
@@ -481,7 +490,7 @@ class Exporter
                 'data' => array(
                     array(
                         'file' => array(
-                            'path' => "qti{$ds}{$exercise['title']}.zip",
+                            'path' => $qtiDir,
                             'version' => 'qti2'
                             )
                         )

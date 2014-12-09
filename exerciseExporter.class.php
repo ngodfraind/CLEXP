@@ -48,19 +48,6 @@ class ExerciseExporter
             $filePathList[] = $questionObj->questionDirSys;
         }
         
-        $ds = DIRECTORY_SEPARATOR;
-        $exDir = __DIR__ . "{$ds}..{$ds}..{$ds}courses{$ds}{$this->course}{$ds}exercise";
-        
-        $zipArchive = new \ZipArchive();
-        $archive = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid() . '.zip';
-        $zipArchive->open($archive, \ZipArchive::CREATE);
-        
-        foreach ($filePathList as $directory) {
-            addDirToZip($directory, $zipArchive, true);
-        }
-        
-        $zipArchive->close();
-        
-        return $archive;
+        return $filePathList;
     }
 }
