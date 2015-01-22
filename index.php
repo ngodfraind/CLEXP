@@ -33,6 +33,8 @@ if (file_exists($file)) {
         header('Content-Disposition: attachment; filename='.basename($file));
         header('Content-Transfer-Encoding: octet-stream'); 
         header('Connection: close'); 
-        echo readfile($file);
+        ob_clean();
+        flush();
+        readfile($file);
         //unlink($file);
 }
