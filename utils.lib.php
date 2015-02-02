@@ -27,9 +27,7 @@ function zipDir($directory, $removeOldFiles = false)
     $zipArchive->close();
     
     if ($removeOldFiles) {
-        foreach ($iterator as $fileinfo) {
-        $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
-        $todo($fileinfo->getRealPath());
+        recursiveRemoveDirectory($directory);
     }
 
         rmdir($directory);
@@ -125,4 +123,20 @@ function copyDirectory($source, $dest)
             copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
         }
     }
+}
+
+/**
+ * http://stackoverflow.com/questions/11267086/php-unlink-all-files-within-a-directory-and-then-deleting-that-directory 
+ */
+function recursiveRemoveDirectory($directory)
+{
+    foreach(glob("{$directory}/*") as $file)
+    {
+        if(is_dir($file)) { 
+            recursiveRemoveDirectory($file);
+        } else {
+            unlink($file);
+        }
+    }
+    rmdir($directory);
 }
