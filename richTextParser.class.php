@@ -48,7 +48,7 @@ class RichTextParser
     
     private function setPlaceholders($text)
     {
-        $matches = [];
+        $matches = array();
         //download url
         preg_match_all(
             '#/claroline/backends/download.php\?url=([^&]+)#', 
@@ -59,7 +59,7 @@ class RichTextParser
         
         if (count($matches) > 0) {
             foreach ($matches as $match) {
-                $matchReplaced = [];
+                $matchReplaced = array();
                 $requestUrl = urldecode(strip_tags($match[1]));
 
                 if (is_download_url_encoded($requestUrl)) {
@@ -84,7 +84,7 @@ class RichTextParser
         }
         
         //the other url
-        $matches = [];
+        $matches = array();
         $regexp = '#<img src="(.*/' . $this->course . '/document)([^"]+)[^>]+>#';
         preg_match_all(
             $regexp, 
@@ -95,7 +95,7 @@ class RichTextParser
         
         if (count($matches) > 1) {
             foreach($matches as $match) {
-                $matchReplaced = [];;
+                $matchReplaced = array();
                 $fileUid = $this->findFileInData($match[2]);
                 preg_match($regexp, $text, $matchReplaced);
                 
