@@ -59,7 +59,7 @@ function findUidByPath($path, $data)
 {
     $elements = explode('/', $path);
     $last = array_pop($elements);
-    $uids = [];
+    $uids = array();
     $i = 0;
 
     //get the uid tree path
