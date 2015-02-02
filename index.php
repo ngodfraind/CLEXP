@@ -36,5 +36,5 @@ if (file_exists($file)) {
         ob_clean();
         flush();
         readfile($file);
-        //unlink($file);
+        unlink($file);
 }
