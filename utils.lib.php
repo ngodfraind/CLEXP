@@ -69,7 +69,12 @@ function findUidByPath($path, $data)
         $i++;
     }
 
-    $lastParent = count($uids) > 0 ? array_pop($uids)['uid']: 0;
+    if (count($uids) > 0) {
+        $arr = array_pop($uids);
+        $lastParent = $arr['uid'];
+    } else {
+        $lastParent = 0;
+    }
 
     //find the last leaf
     foreach($data['directories'] as $directory) {
