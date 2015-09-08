@@ -30,8 +30,7 @@ function zipDir($directory, $removeOldFiles = false)
         recursiveRemoveDirectory($directory);
     }
 
-        rmdir($directory);
-    }
+    rmdir($directory);
     
     return $archive;
 }
