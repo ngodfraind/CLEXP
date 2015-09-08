@@ -107,6 +107,7 @@ function findDir($parentUid, $name, $data)
 
 function copyDirectory($source, $dest)
 {
+	if (!is_dir($source)) return;
     foreach (
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(

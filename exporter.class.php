@@ -155,6 +155,7 @@ class Exporter
             
             $directories[] = array(
                 'directory' => array(
+					'published' => true,
                     'name' => utf8_encode($group['name']),
                     'creator' => null,
                     'parent' => 0,
@@ -197,6 +198,7 @@ class Exporter
                 
                 $items[] = array(
                         'item' => array(
+                        'published' => true,
                         'name' => utf8_encode($item->getBaseName()),
                         'creator' => null,
                         'parent' => $parent,
@@ -220,6 +222,7 @@ class Exporter
             if ($item->isDir() && !$item->isDot()) {
                 $directories[] = array(
                     'directory' => array(
+						'published' => true,
                         'name' => utf8_encode($item->getBaseName()),
                         'creator' => null,
                         'parent' => $parent,
@@ -272,11 +275,11 @@ class Exporter
                         
             //create "text" resource
             $item = array(
+				'published' => true,
                 'name' => $data['title'],
                 'creator' => null,
                 'parent' => 0,
                 'type' => 'text',
-                'is_rich' => true,
                 'roles' => $roles,
                 'uid' => $iid,
                 'data' => array(
@@ -306,12 +309,12 @@ class Exporter
         //$item list 
         foreach ($categories as $category) {
             $item = array(
+				'published' => true,
                 'name' => $category['cat_title'],
                 'creator' => null,
                 'parent' => 0,
                 'uid' => $iid,
                 'type' => 'claroline_forum',
-                'is_rich' => true,
                 'roles' => $roles,
                 'import' => array(array('path' => 'forum_' . $category['cat_id'] . '.yml'))
             );
@@ -320,51 +323,53 @@ class Exporter
             $forums = claro_export_forum_list($course, $category['cat_id']);
             $categories = array();
             
-            foreach ($forums as $forum) {
-                $subjects = array();
-                $topics = claro_export_topic_list($course, $forum['forum_id']);
-                
-                foreach ($topics as $topic) {
-                    $messages = array();
-                    $posts = claro_export_forum_post($course, $topic['topic_id']);
-                    @mkdir(__DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}");
-                    
-                    foreach ($posts as $post) {
-                        $uniqid = uniqid() . '.txt';
-                        file_put_contents(
-                            __DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}", 
-                            utf8_encode($post['post_text'])
-                        );
+            if ($forums) {
+				foreach ($forums as $forum) {
+					$subjects = array();
+					$topics = claro_export_topic_list($course, $forum['forum_id']);
+					
+					foreach ($topics as $topic) {
+						$messages = array();
+						$posts = claro_export_forum_post($course, $topic['topic_id']);
+						@mkdir(__DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}");
+						
+						foreach ($posts as $post) {
+							$uniqid = uniqid() . '.txt';
+							file_put_contents(
+								__DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}", 
+								utf8_encode($post['post_text'])
+							);
 
-                        $creator = user_get_properties($post['poster_id']);
-                        $creatorUsername = $creator['username'];
-                        
-                        $messages[] = array(
-                            'message' => array(
-                                'path' => "forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}",
-                                'creator' => $creatorUsername,
-                                'author' => $creatorUsername,
-                                'creation_date' => $post['post_time']
-                            )
-                        );
-                    }
-                    
-                    $subjects[] = array(
-                        'subject' => array(
-                            'name' => $topic['topic_title'],
-                            'creator' => null,
-                            'messages' => $messages
-                        )
-                    );
-                }
-                
-                $categories[] = array(
-                    'category' => array(
-                        'name' => $forum['forum_name'],
-                        'subjects' => $subjects
-                    )
-                );
-            }
+							$creator = user_get_properties($post['poster_id']);
+							$creatorUsername = $creator['username'];
+							
+							$messages[] = array(
+								'message' => array(
+									'path' => "forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}",
+									'creator' => $creatorUsername,
+									'author' => $creatorUsername,
+									'creation_date' => $post['post_time']
+								)
+							);
+						}
+						
+						$subjects[] = array(
+							'subject' => array(
+								'name' => $topic['topic_title'],
+								'creator' => null,
+								'messages' => $messages
+							)
+						);
+					}
+					
+					$categories[] = array(
+						'category' => array(
+							'name' => $forum['forum_name'],
+							'subjects' => $subjects
+						)
+					);
+				}
+			}
             
             $data['data'] = $categories;
             
@@ -395,13 +400,13 @@ class Exporter
             );
             $item = array(
                     'item' => array(
+                    'published' => true,
                     'name' => $wrkAssignment['title'],
                     'creator' => null,
                     'parent' => 0,
                     'uid' => $iid,
                     'type' => 'text',
                     'roles' => $roles,
-                    'is_rich' => true,
                     'data' => array(
                         array(
                             'file' => array(
@@ -435,6 +440,7 @@ class Exporter
                 
                 $items[] = array(
                     'item' => array(
+                    'published' => true,
                     'name' => utf8_encode($item->getBaseName()),
                     'creator' => null,
                     'parent' => 0,
@@ -481,6 +487,7 @@ class Exporter
             //rename($qti, $qtiDir . $ds . $exercise['title'] . '.zip');
             $items[] = array(
                 'item' => array(
+                'published' => true,
                 'name' => utf8_encode($exercise['title']),
                 'creator' => null,
                 'parent' => 0,
@@ -491,7 +498,8 @@ class Exporter
                     array(
                         'file' => array(
                             'path' => $qtiDir,
-                            'version' => 'qti2'
+                            'version' => 'qti2',
+                            'title' => utf8_encode($exercise['title'])
                             )
                         )
                     )
@@ -508,7 +516,8 @@ class Exporter
         $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $toolsIntroductions = new ToolIntroductionIterator($course);
-        $editorialTab = array( 'name' => 'Editorial');
+        $editorialTab = array( 'name' => 'Editorial', 'widgets' => array());
+
         @mkdir(__DIR__ . "{$ds}{$course}{$ds}home");
         @mkdir(__DIR__ . "{$ds}{$course}{$ds}home{$ds}editorial");
         @mkdir(__DIR__ . "{$ds}{$course}{$ds}home{$ds}course_description");
