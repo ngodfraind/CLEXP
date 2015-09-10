@@ -15,15 +15,11 @@ require_once __DIR__ . '/../../claroline/wiki/lib/class.wiki.php';
 require_once __DIR__ . '/exporter.class.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
-$exportUser = true;
-$exportGroups = true;
-$course = 'TEST';
-$nameTools = get_lang('Export');
+//you can change this value to 'utf-8', 'iso-8859-1', 'none'
+$encoding = 'utf-8';
+
 $code = $claroline->display->header->course['sysCode'];
-
-//echo $claroline->display->render();
-
-$exporter = new Exporter($code);
+$exporter = new Exporter($code, $encoding);
 $file = $exporter->export();
 
 //http://stackoverflow.com/questions/5595485/php-file-download
