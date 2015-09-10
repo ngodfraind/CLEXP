@@ -10,10 +10,12 @@ class Exporter
 {
     private $course;
     private $resourceBaseRoles;
+    private $encoding;
     
-    public function __construct($course)
+    public function __construct($course, $encoding = 'utf-8')
     {
         $this->course = $course;
+        $this->encoding = $encoding;
         $this->resourceBaseRoles = array(
             'role' => array(
                 'name' => 'ROLE_WS_COLLABORATOR',
@@ -55,7 +57,7 @@ class Exporter
         $richTextParser->parseAndReplace();
 
         //add UTF-8 encoding
-        file_put_contents(__DIR__ . "{$ds}{$course}{$ds}manifest.yml", utf8_encode(Yaml::dump($data, 10)));
+        file_put_contents(__DIR__ . "{$ds}{$course}{$ds}manifest.yml", $this->encodeText(Yaml::dump($data, 10)));
         $fileName = __DIR__ . "{$ds}{$course}.zip";
         unlink($fileName);
         $archive = zipDir($courseTmpDir, true);
@@ -156,7 +158,7 @@ class Exporter
             $directories[] = array(
                 'directory' => array(
 					'published' => true,
-                    'name' => utf8_encode($group['name']),
+                    'name' => $this->encodeText($group['name']),
                     'creator' => null,
                     'parent' => 0,
                     'uid' => $uid,
@@ -199,7 +201,7 @@ class Exporter
                 $items[] = array(
                         'item' => array(
                         'published' => true,
-                        'name' => utf8_encode($item->getBaseName()),
+                        'name' => $this->encodeText($item->getBaseName()),
                         'creator' => null,
                         'parent' => $parent,
                         'type' => 'file',
@@ -223,7 +225,7 @@ class Exporter
                 $directories[] = array(
                     'directory' => array(
 						'published' => true,
-                        'name' => utf8_encode($item->getBaseName()),
+                        'name' => $this->encodeText($item->getBaseName()),
                         'creator' => null,
                         'parent' => $parent,
                         'uid' => $uid,
@@ -270,7 +272,7 @@ class Exporter
             $uniqid = "wiki{$ds}" . uniqid() . '.txt';
             file_put_contents(
                 __DIR__ . "{$ds}{$course}{$ds}{$uniqid}", 
-                utf8_encode($res)
+                $this->encodeText($res)
             );
                         
             //create "text" resource
@@ -337,7 +339,7 @@ class Exporter
 							$uniqid = uniqid() . '.txt';
 							file_put_contents(
 								__DIR__ . "{$ds}{$course}{$ds}forum{$ds}{$topic['topic_id']}{$ds}{$uniqid}", 
-								utf8_encode($post['post_text'])
+								$this->encodeText($post['post_text'])
 							);
 
 							$creator = user_get_properties($post['poster_id']);
@@ -375,7 +377,7 @@ class Exporter
             
             file_put_contents(
                 __DIR__ . "{$ds}{$course}{$ds}forum_{$category['cat_id']}.yml", 
-                utf8_encode(Yaml::dump($data, 10))
+                $this->encodeText(Yaml::dump($data, 10))
             );
 
             $iid++;
@@ -396,7 +398,7 @@ class Exporter
             $uniqid = "work_assignments{$ds}" . uniqid() . '.txt';
             file_put_contents(
                 __DIR__ . "{$ds}{$course}{$ds}{$uniqid}", 
-                utf8_encode($wrkAssignment['description'])
+                $this->encodeText($wrkAssignment['description'])
             );
             $item = array(
                     'item' => array(
@@ -441,7 +443,7 @@ class Exporter
                 $items[] = array(
                     'item' => array(
                     'published' => true,
-                    'name' => utf8_encode($item->getBaseName()),
+                    'name' => $this->encodeText($item->getBaseName()),
                     'creator' => null,
                     'parent' => 0,
                     'type' => 'claroline_scorm_12',
@@ -475,7 +477,7 @@ class Exporter
 
         foreach ($exercises as $exercise) {
             $filePathList = $exerciseExporter->exportQti($exercise);
-            $exDir = $qtiDir . '/' . utf8_encode($exercise['title']);
+            $exDir = $qtiDir . '/' . $this->encodeText($exercise['title']);
             @mkdir($exDir);
             
             foreach ($filePathList as $path) {
@@ -488,7 +490,7 @@ class Exporter
             $items[] = array(
                 'item' => array(
                 'published' => true,
-                'name' => utf8_encode($exercise['title']),
+                'name' => $this->encodeText($exercise['title']),
                 'creator' => null,
                 'parent' => 0,
                 'type' => 'ujm_exercise',
@@ -499,7 +501,7 @@ class Exporter
                         'file' => array(
                             'path' => $qtiDir,
                             'version' => 'qti2',
-                            'title' => utf8_encode($exercise['title'])
+                            'title' => $this->encodeText($exercise['title'])
                             )
                         )
                     )
@@ -541,7 +543,7 @@ class Exporter
 
             file_put_contents(
                 __DIR__ . "{$ds}{$course}{$ds}home{$ds}editorial{$ds}{$uniqid}",
-                utf8_encode($content)
+                $this->encodeText($content)
             );
 
             $editorialTab['widgets'][$toolsIntroduction->getRank()] = array(
@@ -568,7 +570,7 @@ class Exporter
             $content = $courseDescription['content'];
             file_put_contents(
                 __DIR__ . "{$ds}{$course}{$ds}home{$ds}course_description{$ds}{$uniqid}",
-                utf8_encode($content)
+                $this->encodeText($content)
             );
             
             $courseDescriptionTab['widgets'][] = array(
@@ -590,5 +592,16 @@ class Exporter
 
         return $data;
     }
+    
+    private function encodeText($text)
+    {
+		$utf8 = utf8_encode($text);
+		
+		switch ($this->encoding) {
+			case 'utf-8': return $utf8;
+			case 'iso-8859-1': return iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $utf8);
+			default: return $text;
+		}
+	}
 }
 
