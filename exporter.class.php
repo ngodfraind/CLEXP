@@ -183,6 +183,8 @@ class Exporter
     
     private function exportDirectory($dir, &$directories, &$items, &$uid, &$iid, $roles)
     {
+    	if (!is_dir($dir)) return $directories;
+    	
         $course = $this->course;
         $iterator = new \DirectoryIterator($dir);
         $ds = DIRECTORY_SEPARATOR;
@@ -224,7 +226,7 @@ class Exporter
             if ($item->isDir() && !$item->isDot()) {
                 $directories[] = array(
                     'directory' => array(
-						'published' => true,
+			'published' => true,
                         'name' => $this->encodeText($item->getBaseName()),
                         'creator' => null,
                         'parent' => $parent,
