@@ -432,7 +432,7 @@ class Exporter
         $ds = DIRECTORY_SEPARATOR;
         $course = $this->course;
         $rootDir = __DIR__ . "{$ds}..{$ds}..{$ds}courses{$ds}{$course}{$ds}scormPackages";
-        if (!is_dir($dir)) return $items;
+        if (!is_dir($rootDir)) return $items;
         $iterator = new \DirectoryIterator($rootDir);
         $roles = array($this->resourceBaseRoles);
         $scormDir = __DIR__ . "{$ds}{$course}{$ds}scorm";
