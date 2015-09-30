@@ -31,6 +31,7 @@ class RichTextParser
     
     public function parseAndReplace()
     {
+        if (!is_dir($this->courseTmpDir)) return;
         //in this version of the exporter, all textes are located in ".txt" files.
         //so we parse the tmp directory, find .txt files and replace everything we need out here.
         $iterator = new RecursiveIteratorIterator(
