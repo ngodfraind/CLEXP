@@ -139,7 +139,7 @@ class Exporter
         $items = $this->exportWikis($items, $iid);
         $items = $this->exportWorkAssignments($items, $iid);
         $items = $this->exportScormPackages($items, $iid);
-        $items = $this->exportExercises($items, $iid);
+        //$items = $this->exportExercises($items, $iid);
         $groups = claro_export_groups($course);
         
         foreach ($groups as $group) {
