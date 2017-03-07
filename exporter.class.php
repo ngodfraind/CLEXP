@@ -454,7 +454,7 @@ class Exporter
                     'uid' => $iid,
                     'data' => array(
                         array(
-                            'scorm12' => array(
+                            'claroline_scorm_12' => array(
                                 'path' => "scorm{$ds}{$item->getBaseName()}.zip",
                                 'version' => 'scorm-2012'
                                 )
