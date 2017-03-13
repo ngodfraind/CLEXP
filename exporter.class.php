@@ -437,26 +437,28 @@ class Exporter
         $roles = array($this->resourceBaseRoles);
         $scormDir = __DIR__ . "{$ds}{$course}{$ds}scorm";
         @mkdir($scormDir);
-        
+
         foreach ($iterator as $item) {
             if ($item->isDir() && !$item->isDot()) {
                 $archive = zipDir($item->getPathName(), $removeOldFiles = false);
                 rename($archive, $scormDir . $ds . $item->getBaseName() . '.zip');
-                
+                $version = $this->getScormVersion($item->getPathname());
+                $type = $version === '1.2' ? 'claroline_scorm_12': 'claroline_scorm_2004';
+
                 $items[] = array(
                     'item' => array(
                     'published' => true,
                     'name' => $this->encodeText($item->getBaseName()),
                     'creator' => null,
                     'parent' => 0,
-                    'type' => 'claroline_scorm_12',
+                    'type' => $type,
                     'roles' => $roles,
                     'uid' => $iid,
                     'data' => array(
                         array(
-                            'claroline_scorm_12' => array(
+                            'scorm' => array(
                                 'path' => "scorm{$ds}{$item->getBaseName()}.zip",
-                                'version' => 'scorm-2012'
+                                'version' => $version
                                 )
                             )
                         )
@@ -465,9 +467,39 @@ class Exporter
                 $iid++;
             }
         }
-        
+
         return $items;
     }
+	
+    private function getScormVersion($scormDir)
+    {
+        $contents = '';
+        $manifest = $scormDir . DIRECTORY_SEPARATOR . 'imsmanifest.xml';
+        $stream = fopen($manifest, 'r');
+
+        if (!$stream) {
+            throw new \Exception($manifest . ' stream not found');
+        }
+
+        while (!feof($stream)) {
+            $contents .= fread($stream, 2);
+        }
+
+        $dom = new \DOMDocument();
+
+        if (!$dom->loadXML($contents)) {
+            throw new \Exception('cannot_load_imsmanifest_message');
+        }
+
+        $scormVersionElements = $dom->getElementsByTagName('schemaversion');
+        $version = $scormVersionElements->item(0)->textContent;
+
+        if ($version === '1.2') return '1.2';
+        if ($version === 'CAM 1.3' || $version === '2004 3rd Edition' || $version === '2004 4th Edition') return '2004';
+
+        return $version;
+    }
+
 
     private function exportExercises($items, &$iid)
     {
