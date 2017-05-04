@@ -58,7 +58,7 @@ function claro_export_forum_list($course, $categoryId)
     $tbl = get_module_course_tbl(array('bb_forums'), $course);
     
     $sql = "SELECT * FROM `{$tbl['bb_forums']}`
-        WHERE `bb_forums`.`cat_id` = {$categoryId}  
+        WHERE `{$tbl['bb_forums']}`.`cat_id` = {$categoryId}  
         ORDER BY forum_order";
     
     return claro_sql_query_fetch_all_rows($sql);
@@ -87,7 +87,7 @@ function claro_export_topic_list($course, $forumId)
     $tbl = get_module_course_tbl(array('bb_topics'), $course);
     
     $sql = "SELECT * FROM `{$tbl['bb_topics']}`
-        WHERE `bb_topics`.`forum_id` = {$forumId}";
+        WHERE `{$tbl['bb_topics']}`.`forum_id` = {$forumId}";
         
     return claro_sql_query_fetch_all_rows($sql);
 }
